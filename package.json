@@ -1,0 +1,28 @@
+{
+  "name": "sweetpos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-Grade POS System for Sweet Shop",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "clean": "turbo clean && rimraf node_modules",
+    "db:migrate": "pnpm --filter @sweetpos/api run migration:run",
+    "db:seed": "pnpm --filter @sweetpos/api run seed"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "prettier": "^3.3.0",
+    "rimraf": "^5.0.7",
+    "turbo": "^2.1.0",
+    "typescript": "^5.5.0"
+  },
+  "packageManager": "pnpm@9.4.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

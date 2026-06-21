@@ -1,0 +1,38 @@
+# Multi-stage build for NestJS API
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm@9.4.0
+
+# Copy workspace config
+COPY pnpm-lock.yaml package.json pnpm-workspace.yaml turbo.json ./
+COPY packages/ packages/
+COPY apps/api/ apps/api/
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Build
+RUN pnpm --filter @sweetpos/api run build
+
+# ---- Production ----
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# Copy built output and dependencies
+COPY --from=builder /app/apps/api/dist ./dist
+COPY --from=builder /app/apps/api/package.json ./
+COPY --from=builder /app/node_modules ./node_modules
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:3000/api/health || exit 1
+
+EXPOSE 3000
+
+ENV NODE_ENV=production
+
+CMD ["node", "dist/main.js"]

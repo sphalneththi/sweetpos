@@ -1,0 +1,46 @@
+name: Release Desktop
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [windows-latest]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.4.0
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Build shared packages
+        run: pnpm turbo build --filter=@sweetpos/shared-types
+      
+      - name: Build renderer
+        run: pnpm --filter @sweetpos/renderer build
+      
+      - name: Build & Package Electron
+        run: pnpm --filter @sweetpos/desktop run package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.os }}
+          path: apps/desktop/release/*.exe
