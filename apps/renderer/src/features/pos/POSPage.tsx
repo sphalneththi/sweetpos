@@ -8,6 +8,7 @@ import { useCategories } from '../../hooks/useCategories';
 import { useCustomers } from '../../hooks/useCustomers';
 import { useCreateSale } from '../../hooks/useSales';
 import { Modal } from '../../components/Modal';
+import { BarcodeScanner } from '../../components/BarcodeScanner';
 import { fmt } from '../../utils/format';
 
 /* ─── Payment Modal ──────────────────────────────────────────────── */
@@ -151,6 +152,7 @@ export const POSPage: React.FC = () => {
   const [showCustomer, setShowCustomer] = useState(false);
   const [showDiscount, setShowDiscount] = useState(false);
   const [showReceipt, setShowReceipt] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const [lastSale, setLastSale] = useState<any>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -256,7 +258,10 @@ export const POSPage: React.FC = () => {
     <div className="pos-layout">
       {/* ── Left: Products ── */}
       <div className="pos-products">
-        <input ref={searchRef} className="input input-lg input-search" type="text" placeholder="Search products or scan barcode… (F2)" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input ref={searchRef} className="input input-lg input-search" type="text" placeholder="Search products or scan barcode… (F2)" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} style={{ flex: 1 }} />
+          <button className="btn btn-ghost btn-lg" onClick={() => setShowScanner(true)} title="Scan with camera" style={{ fontSize: 20, padding: '0 16px', border: '1px solid var(--border-color)' }}>📷</button>
+        </div>
 
         <div className="product-categories">
           <button className={`category-chip ${selectedCategory === 'all' ? 'active' : ''}`} onClick={() => setSelectedCategory('all')}>All</button>
@@ -358,6 +363,28 @@ export const POSPage: React.FC = () => {
       <CustomerModal open={showCustomer} onClose={() => setShowCustomer(false)} onSelect={handleSelectCustomer} selectedId={selectedCustomer?.id ?? null} />
       <DiscountModal open={showDiscount} onClose={() => setShowDiscount(false)} onApply={(t, v) => setDiscount(t, v)} current={{ type: discountType, value: discountValue }} />
       <ReceiptModal open={showReceipt} onClose={() => setShowReceipt(false)} sale={lastSale} />
+      <BarcodeScanner open={showScanner} onClose={() => setShowScanner(false)} onScan={(barcode) => {
+        // Look up barcode and add to cart
+        const product = products.find(p => p.barcode === barcode);
+        if (product && product.stockQuantity > 0) {
+          addItem({ productId: product.id, productName: product.name, barcode: product.barcode, unitPrice: product.sellingPrice, costPrice: product.costPrice, taxRate: product.taxRate });
+          toast.success(`Added: ${product.name}`);
+        } else if (!product) {
+          fetch(`/api/products/barcode/${barcode}`, { headers: { Authorization: `Bearer ${localStorage.getItem('sweetpos-access-token')}` } })
+            .then(r => r.ok ? r.json() : null)
+            .then(p => {
+              if (p && p.stockQuantity > 0) {
+                addItem({ productId: p.id, productName: p.name, barcode: p.barcode, unitPrice: p.sellingPrice, costPrice: p.costPrice, taxRate: p.taxRate });
+                toast.success(`Added: ${p.name}`);
+              } else {
+                toast.error(p ? 'Out of stock' : 'Product not found');
+              }
+            })
+            .catch(() => toast.error('Barcode lookup failed'));
+        } else {
+          toast.error('Out of stock');
+        }
+      }} />
     </div>
   );
 };
