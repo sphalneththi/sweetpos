@@ -4,6 +4,7 @@ import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } fro
 import { useCategories, useCreateCategory, useUpdateCategory } from '../../hooks/useCategories';
 import { Modal } from '../../components/Modal';
 import { Table } from '../../components/Table';
+import { BarcodeScanner } from '../../components/BarcodeScanner';
 import { fmt } from '../../utils/format';
 
 /* ─── Product Form ─── */
@@ -22,9 +23,16 @@ const ProductForm: React.FC<{ initial?: any; categories: any[]; onSave: (d: any)
     } : {}),
   }));
   const [saving, setSaving] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
   const handleChange = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm(f => ({ ...f, [k]: e.target.value }));
+  };
+
+  const handleBarcodeScan = (barcode: string) => {
+    setForm(f => ({ ...f, barcode }));
+    setShowScanner(false);
+    toast.success(`Barcode captured: ${barcode}`);
   };
 
   const handleSubmit = async () => {
@@ -37,6 +45,7 @@ const ProductForm: React.FC<{ initial?: any; categories: any[]; onSave: (d: any)
   };
 
   return (
+    <>
     <Modal open onClose={onClose} title={initial ? 'Edit Product' : 'Add Product'} size="lg"
       footer={<><button className="btn btn-ghost" onClick={onClose} disabled={saving}>Cancel</button><button className="btn btn-primary" onClick={handleSubmit} disabled={saving}>{saving ? 'Saving…' : 'Save Product'}</button></>}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -46,7 +55,10 @@ const ProductForm: React.FC<{ initial?: any; categories: any[]; onSave: (d: any)
         </div>
         <div className="form-group">
           <label className="form-label">Barcode</label>
-          <input className="input" placeholder="Scan or type barcode" value={form.barcode} onChange={handleChange('barcode')} />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input className="input" placeholder="Scan or type barcode" value={form.barcode} onChange={handleChange('barcode')} style={{ flex: 1 }} />
+            <button type="button" className="btn btn-ghost" onClick={() => setShowScanner(true)} style={{ padding: '0 12px', fontSize: 18, border: '1px solid var(--border-color)' }} title="Scan with camera">📷</button>
+          </div>
         </div>
         <div className="form-group">
           <label className="form-label">SKU</label>
@@ -95,6 +107,8 @@ const ProductForm: React.FC<{ initial?: any; categories: any[]; onSave: (d: any)
         </div>
       </div>
     </Modal>
+    <BarcodeScanner open={showScanner} onClose={() => setShowScanner(false)} onScan={handleBarcodeScan} continuous={false} />
+    </>
   );
 };
 
