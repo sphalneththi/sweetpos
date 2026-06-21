@@ -28,12 +28,33 @@ export const LoginPage: React.FC = () => {
     setError('');
 
     try {
-      // Use the offline local database for authentication
-      const user = await window.electronAPI.authLogin(username.trim(), password);
+      let user: any;
+      let accessToken: string;
+      let refreshToken: string;
 
-      // We don't have JWT tokens offline, so we pass dummy tokens 
-      // The sync engine will generate a real token when authenticating with the cloud later
-      login(user, 'offline-access-token', 'offline-refresh-token');
+      if (typeof window !== 'undefined' && (window as any).electronAPI) {
+        // Electron: use local SQLite auth
+        user = await (window as any).electronAPI.authLogin(username.trim(), password);
+        accessToken = 'offline-access-token';
+        refreshToken = 'offline-refresh-token';
+      } else {
+        // Browser: use REST API
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: username.trim(), password }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error((err as any).message || 'Invalid credentials');
+        }
+        const data = await res.json();
+        user = data.user;
+        accessToken = data.accessToken;
+        refreshToken = data.refreshToken;
+      }
+
+      login(user, accessToken, refreshToken);
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {

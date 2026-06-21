@@ -2,8 +2,8 @@
 // SweetPOS DTO Interfaces
 // ===================================
 
-import { UserRole, ProductUnitType, PaymentMethod, DiscountType, MovementType, ReturnType } from '../enums';
-import { CartItem } from '../entities';
+import { UserRole, ProductUnitType, PaymentMethod, DiscountType, MovementType, ReturnType } from '../enums/index';
+import { CartItem } from '../entities/index';
 
 // ---- Auth ----
 export interface LoginDto {

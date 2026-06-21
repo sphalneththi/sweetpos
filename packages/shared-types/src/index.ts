@@ -2,7 +2,7 @@
 // @sweetpos/shared-types
 // ===================================
 
-export * from './enums';
-export * from './entities';
-export * from './dto';
-export * from './ipc';
+export * from './enums/index';
+export * from './entities/index';
+export * from './dto/index';
+export * from './ipc/index';

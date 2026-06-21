@@ -4,13 +4,19 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDirs": ["./src", "../../packages/shared-types/src"],
     "target": "ES2021",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "declaration": false,
     "declarationMap": false,
-    "strictPropertyInitialization": false
+    "sourceMap": false,
+    "strictPropertyInitialization": false,
+    "composite": false,
+    "skipLibCheck": true,
+    "paths": {
+      "@sweetpos/shared-types": ["../../packages/shared-types/src/index.ts"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "test"]

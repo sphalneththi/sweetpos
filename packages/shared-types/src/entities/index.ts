@@ -14,7 +14,7 @@ import {
   LoyaltyTransactionType,
   SyncOperation,
   AuditAction,
-} from '../enums';
+} from '../enums/index';
 
 // Base entity with common fields
 export interface BaseEntity {
