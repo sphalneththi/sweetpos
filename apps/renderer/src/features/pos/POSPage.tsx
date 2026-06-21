@@ -169,12 +169,33 @@ export const POSPage: React.FC = () => {
 
   const handleBarcodeInput = useCallback((e: KeyboardEvent) => {
     const target = e.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return;
+    // Ignore if any modal is open
+    if (showPayment || showCustomer || showDiscount || showReceipt) return;
+
     if (e.key === 'Enter' && barcodeBuffer.current.length > 2) {
       const barcode = barcodeBuffer.current; barcodeBuffer.current = '';
+      // First check loaded products, then try API lookup
       const product = products.find(p => p.barcode === barcode);
-      if (product && product.stockQuantity > 0) { addItem({ productId: product.id, productName: product.name, barcode: product.barcode, unitPrice: product.sellingPrice, costPrice: product.costPrice, taxRate: product.taxRate }); toast.success(`Added: ${product.name}`); }
-      else toast.error('Product not found or out of stock');
+      if (product && product.stockQuantity > 0) {
+        addItem({ productId: product.id, productName: product.name, barcode: product.barcode, unitPrice: product.sellingPrice, costPrice: product.costPrice, taxRate: product.taxRate });
+        toast.success(`Added: ${product.name}`);
+      } else if (!product) {
+        // API lookup for barcode not in current view
+        fetch(`/api/products/barcode/${barcode}`, { headers: { Authorization: `Bearer ${localStorage.getItem('sweetpos-access-token')}` } })
+          .then(r => r.ok ? r.json() : null)
+          .then(p => {
+            if (p && p.stockQuantity > 0) {
+              addItem({ productId: p.id, productName: p.name, barcode: p.barcode, unitPrice: p.sellingPrice, costPrice: p.costPrice, taxRate: p.taxRate });
+              toast.success(`Added: ${p.name}`);
+            } else {
+              toast.error(p ? 'Product out of stock' : 'Product not found');
+            }
+          })
+          .catch(() => toast.error('Barcode lookup failed'));
+      } else {
+        toast.error('Product out of stock');
+      }
       return;
     }
     if (e.key.length === 1) {
@@ -182,7 +203,7 @@ export const POSPage: React.FC = () => {
       if (barcodeTimeout.current) clearTimeout(barcodeTimeout.current);
       barcodeTimeout.current = setTimeout(() => { barcodeBuffer.current = ''; }, 150);
     }
-  }, [addItem, products]);
+  }, [addItem, products, showPayment, showCustomer, showDiscount, showReceipt]);
 
   useEffect(() => { window.addEventListener('keydown', handleBarcodeInput); return () => window.removeEventListener('keydown', handleBarcodeInput); }, [handleBarcodeInput]);
 

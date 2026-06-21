@@ -8,9 +8,24 @@ import { fmt } from '../../utils/format';
 
 /* ─── Product Form ─── */
 const ProductForm: React.FC<{ initial?: any; categories: any[]; onSave: (d: any) => Promise<void>; onClose: () => void }> = ({ initial, categories, onSave, onClose }) => {
-  const [form, setForm] = useState({ name: '', barcode: '', sku: '', description: '', categoryId: '', sellingPrice: initial?.sellingPrice || '', costPrice: initial?.costPrice || '', stockQuantity: initial?.stockQuantity || '', minStockLevel: initial?.minStockLevel || '', unitType: 'piece', taxRate: '0', imageUrl: '', ...initial });
+  const [form, setForm] = useState(() => ({
+    name: '', barcode: '', sku: '', description: '', categoryId: '',
+    sellingPrice: '', costPrice: '', stockQuantity: '', minStockLevel: '',
+    unitType: 'piece', taxRate: '0', imageUrl: '',
+    ...(initial ? {
+      ...initial,
+      sellingPrice: String(initial.sellingPrice ?? ''),
+      costPrice: String(initial.costPrice ?? ''),
+      stockQuantity: String(initial.stockQuantity ?? ''),
+      minStockLevel: String(initial.minStockLevel ?? ''),
+      taxRate: String(initial.taxRate ?? '0'),
+    } : {}),
+  }));
   const [saving, setSaving] = useState(false);
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [k]: e.target.value }));
+
+  const handleChange = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm(f => ({ ...f, [k]: e.target.value }));
+  };
 
   const handleSubmit = async () => {
     if (!form.name.trim() || !form.sellingPrice || !form.costPrice) { toast.error('Name, selling price and cost price are required'); return; }
@@ -21,45 +36,62 @@ const ProductForm: React.FC<{ initial?: any; categories: any[]; onSave: (d: any)
     } catch (e: any) { toast.error(e.message); } finally { setSaving(false); }
   };
 
-  const F = ({ label, k, type = 'text', placeholder = '' }: { label: string; k: string; type?: string; placeholder?: string }) => (
-    <div className="form-group">
-      <label className="form-label">{label}</label>
-      <input className="input" type={type} placeholder={placeholder} value={(form as any)[k]} onChange={set(k)} />
-    </div>
-  );
-
   return (
     <Modal open onClose={onClose} title={initial ? 'Edit Product' : 'Add Product'} size="lg"
       footer={<><button className="btn btn-ghost" onClick={onClose} disabled={saving}>Cancel</button><button className="btn btn-primary" onClick={handleSubmit} disabled={saving}>{saving ? 'Saving…' : 'Save Product'}</button></>}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="form-group" style={{ gridColumn: '1/-1' }}>
           <label className="form-label">Product Name *</label>
-          <input className="input" placeholder="e.g. Chocolate Cake" value={form.name} onChange={set('name')} autoFocus />
+          <input className="input" placeholder="e.g. Chocolate Cake" value={form.name} onChange={handleChange('name')} autoFocus />
         </div>
-        <F label="Barcode" k="barcode" placeholder="Scan or type barcode" />
-        <F label="SKU" k="sku" placeholder="Internal code" />
-        <F label="Selling Price (LKR) *" k="sellingPrice" type="number" placeholder="0.00" />
-        <F label="Cost Price (LKR) *" k="costPrice" type="number" placeholder="0.00" />
-        <F label="Stock Quantity" k="stockQuantity" type="number" placeholder="0" />
-        <F label="Min Stock Level" k="minStockLevel" type="number" placeholder="0" />
+        <div className="form-group">
+          <label className="form-label">Barcode</label>
+          <input className="input" placeholder="Scan or type barcode" value={form.barcode} onChange={handleChange('barcode')} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">SKU</label>
+          <input className="input" placeholder="Internal code" value={form.sku} onChange={handleChange('sku')} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Selling Price (LKR) *</label>
+          <input className="input" type="number" placeholder="0.00" value={form.sellingPrice} onChange={handleChange('sellingPrice')} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Cost Price (LKR) *</label>
+          <input className="input" type="number" placeholder="0.00" value={form.costPrice} onChange={handleChange('costPrice')} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Stock Quantity</label>
+          <input className="input" type="number" placeholder="0" value={form.stockQuantity} onChange={handleChange('stockQuantity')} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Min Stock Level</label>
+          <input className="input" type="number" placeholder="0" value={form.minStockLevel} onChange={handleChange('minStockLevel')} />
+        </div>
         <div className="form-group">
           <label className="form-label">Category</label>
-          <select className="input" value={form.categoryId} onChange={set('categoryId')}>
+          <select className="input" value={form.categoryId} onChange={handleChange('categoryId')}>
             <option value="">— No Category —</option>
             {categories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
         <div className="form-group">
           <label className="form-label">Unit Type</label>
-          <select className="input" value={form.unitType} onChange={set('unitType')}>
+          <select className="input" value={form.unitType} onChange={handleChange('unitType')}>
             {['piece','kg','g','l','ml','pack','box','dozen'].map(u => <option key={u} value={u}>{u}</option>)}
           </select>
         </div>
-        <F label="Tax Rate (%)" k="taxRate" type="number" placeholder="0" />
-        <F label="Image / Emoji" k="imageUrl" placeholder="🍬 or image URL" />
+        <div className="form-group">
+          <label className="form-label">Tax Rate (%)</label>
+          <input className="input" type="number" placeholder="0" value={form.taxRate} onChange={handleChange('taxRate')} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Image / Emoji</label>
+          <input className="input" placeholder="🍬 or image URL" value={form.imageUrl} onChange={handleChange('imageUrl')} />
+        </div>
         <div className="form-group" style={{ gridColumn: '1/-1' }}>
           <label className="form-label">Description</label>
-          <textarea className="input" rows={2} placeholder="Optional description" value={form.description} onChange={set('description') as any} />
+          <textarea className="input" rows={2} placeholder="Optional description" value={form.description} onChange={handleChange('description')} />
         </div>
       </div>
     </Modal>

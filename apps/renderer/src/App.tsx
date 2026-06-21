@@ -31,18 +31,23 @@ const Sidebar: React.FC = () => {
 
   return (
     <nav className="sidebar">
-      <div className="sidebar-logo" title="SweetPOS">🍬</div>
+      <div className="sidebar-logo">🍬 <span className="sidebar-logo-text">SweetPOS</span></div>
       {visible.map(item => (
         <button key={item.path} className={`sidebar-item ${location.pathname.startsWith(item.path) ? 'active' : ''}`}
-          onClick={() => navigate(item.path)} title={item.label}>
-          {item.icon}
+          onClick={() => navigate(item.path)}>
+          <span className="sidebar-item-icon">{item.icon}</span>
+          <span className="sidebar-item-label">{item.label}</span>
         </button>
       ))}
       <div className="sidebar-spacer" />
-      <button className="sidebar-item" onClick={toggleTheme} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
-        {theme === 'dark' ? '☀️' : '🌙'}
+      <button className="sidebar-item" onClick={toggleTheme}>
+        <span className="sidebar-item-icon">{theme === 'dark' ? '☀️' : '🌙'}</span>
+        <span className="sidebar-item-label">{theme === 'dark' ? 'Light' : 'Dark'}</span>
       </button>
-      <button className="sidebar-item" onClick={logout} title="Logout" style={{ color: 'var(--color-danger)' }}>🚪</button>
+      <button className="sidebar-item" onClick={logout} style={{ color: 'var(--color-danger)' }}>
+        <span className="sidebar-item-icon">🚪</span>
+        <span className="sidebar-item-label">Logout</span>
+      </button>
     </nav>
   );
 };
