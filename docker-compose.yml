@@ -19,5 +19,22 @@ services:
       timeout: 3s
       retries: 5
 
+  backend:
+    build: ./backend
+    container_name: sweetpos-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: sweetpos
+      DB_USERNAME: sweetpos
+      DB_PASSWORD: sweetpos_dev_password
+      JWT_SECRET: sweetpos-super-secret-key-change-in-production-min-256-bits-long
+    ports:
+      - "8080:8080"
+
 volumes:
   sweetpos_pgdata:

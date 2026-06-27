@@ -1,56 +1,87 @@
-# 🍬 SweetPOS — Production-Grade Point of Sale System
+# 🍬 SweetPOS v2.0 — Hybrid Offline-First POS System
 
-A full-featured POS system for sweet shops, bakeries, and retail stores. Built with NestJS, React, PostgreSQL, and TypeScript.
+A production-grade Point of Sale system with **offline-first Flutter app** and **Spring Boot cloud backend**. The POS works fully offline with local SQLite, syncs to cloud when connected, and provides a cloud admin portal.
 
-![SweetPOS](https://img.shields.io/badge/SweetPOS-v1.0-e85d75?style=for-the-badge)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.5-3178c6?style=flat-square)
-![NestJS](https://img.shields.io/badge/NestJS-10-ea2845?style=flat-square)
-![React](https://img.shields.io/badge/React-18-61dafb?style=flat-square)
+![SweetPOS](https://img.shields.io/badge/SweetPOS-v2.0-e85d75?style=for-the-badge)
+![Java](https://img.shields.io/badge/Java-21-007396?style=flat-square)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.4-6DB33F?style=flat-square)
+![Flutter](https://img.shields.io/badge/Flutter-3.24-02569B?style=flat-square)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?style=flat-square)
+
+## Architecture
+
+```
+┌──────────────────────┐         ┌───────────────────────────┐
+│   Flutter POS App    │◄──sync──►│   Spring Boot Backend     │
+│  (Offline-first)     │         │   (Cloud API)             │
+│                      │         │                           │
+│  • SQLite (Drift)    │         │  • PostgreSQL             │
+│  • Riverpod state    │  REST   │  • JWT Auth               │
+│  • Barcode scanner   │◄───────►│  • WebSocket (real-time)  │
+│  • Sync engine       │         │  • Sync Engine            │
+│  • Works offline     │         │  • Admin Portal API       │
+└──────────────────────┘         └───────────────────────────┘
+```
 
 ## Features
 
-- 🛒 **POS Terminal** — Fast product search, barcode scanning (webcam), category filtering, cart management
-- 💰 **Checkout** — Cash/Card/QR payments, change calculation, discounts (% or fixed), customer loyalty points
-- 📊 **Dashboard** — Real-time revenue, transaction count, top products, revenue trends, low stock alerts
-- 📦 **Product Management** — Full CRUD, categories, barcode assignment via camera, stock tracking
-- 📋 **Inventory** — Stock-in/out/adjustment movements, supplier tracking, low stock alerts
-- 👥 **Customers** — Customer database, loyalty points auto-earning, visit tracking
-- 📈 **Reports** — Sales reports with charts, product revenue/profit analysis, inventory valuation
-- ⚙️ **Settings** — User management (admin/cashier roles), supplier management
-- 🔐 **Auth** — JWT authentication, role-based access, account lockout
-- 🌙 **Dark/Light Mode** — Premium UI with theme toggle
+### POS Terminal (Flutter App)
+- 🛒 **Fast checkout** — Product grid, barcode scanning, cart management
+- 📴 **Offline-first** — Works without internet, syncs when connected
+- 💰 **Multiple payments** — Cash, Card, QR
+- 🔄 **Auto-sync** — Background sync with conflict resolution
+- 👥 **Customer loyalty** — Points earning & redemption
+- 📱 **Cross-platform** — Windows, Android, iOS, Web
+
+### Cloud Backend (Spring Boot)
+- 📊 **Dashboard** — Real-time revenue, top products, low stock alerts
+- 📦 **Product management** — Full CRUD, categories, barcode assignment
+- 📋 **Inventory** — Stock in/out/adjustment with audit trail
+- 👥 **Customer database** — Loyalty points, visit tracking
+- 📈 **Reports** — Sales reports, product analysis
+- ⚙️ **Settings** — User management, supplier management
+- 🔐 **Security** — JWT auth, role-based access, account lockout
+- 🔌 **WebSocket** — Real-time push notifications to all terminals
+- 🔄 **Sync API** — Batch sync with idempotency & conflict detection
 
 ## Quick Start
 
 ### Prerequisites
-
-- [Node.js](https://nodejs.org) v20+
+- [Java JDK 21+](https://www.oracle.com/java/technologies/downloads/)
+- [Maven 3.9+](https://maven.apache.org/download.cgi)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- [Flutter SDK 3.24+](https://docs.flutter.dev/get-started/install) (for the POS app)
 
-### Setup (One Command)
-
-```bash
-# Clone the repo
-git clone https://github.com/sphalneththi/sweetpos.git
-cd sweetpos
-
-# Windows (PowerShell)
-./setup.ps1
-
-# Linux / Mac
-chmod +x setup.sh && ./setup.sh
-```
-
-### Start Development
+### 1. Start Backend (Cloud)
 
 ```bash
-pnpm run dev
+# Start PostgreSQL
+docker compose up postgres -d
+
+# Build and run Spring Boot backend
+cd backend
+mvn spring-boot:run
 ```
 
-This starts both the API (port 3000) and the frontend (port 5173).
+Backend runs at **http://localhost:8080**
 
-**Open:** http://localhost:5173
+The database tables are created automatically and seeded with demo data on first run.
+
+### 2. Start Flutter POS App
+
+```bash
+cd flutter_app
+flutter pub get
+flutter run -d windows   # or: flutter run -d chrome
+```
+
+### 3. Full Stack with Docker
+
+```bash
+docker compose up -d
+```
+
+This starts both PostgreSQL and the Spring Boot backend. Then run the Flutter app separately.
 
 ### Login Credentials
 
@@ -59,84 +90,91 @@ This starts both the API (port 3000) and the frontend (port 5173).
 | Admin | `admin` | `admin123` |
 | Cashier | `cashier` | `admin123` |
 
-## Manual Setup
-
-If you prefer to set up manually:
-
-```bash
-# 1. Install pnpm
-npm install -g pnpm
-
-# 2. Install dependencies
-pnpm install --ignore-scripts
-
-# 3. Start PostgreSQL
-docker compose up -d
-
-# 4. Create environment file
-cp .env.example .env
-cp .env apps/api/.env
-
-# 5. Build the API
-cd apps/api && npx nest build && cd ../..
-
-# 6. Start API (creates tables automatically via TypeORM synchronize)
-cd apps/api && node -r ./register-paths.js dist/apps/api/src/main
-# Wait 5 seconds then stop with Ctrl+C
-
-# 7. Seed demo data
-cat apps/api/seed-demo.sql | docker exec -i sweetpos-pg psql -U sweetpos -d sweetpos
-
-# 8. Start both services
-pnpm run dev
-```
-
 ## Project Structure
 
 ```
 sweetpos/
-├── apps/
-│   ├── api/              # NestJS backend (REST API)
-│   │   ├── src/modules/  # Feature modules (auth, sales, products, etc.)
-│   │   └── seed-demo.sql # Demo data seed
-│   ├── renderer/         # React frontend (Vite)
-│   │   ├── src/features/ # Feature pages (POS, Dashboard, etc.)
-│   │   ├── src/hooks/    # React Query hooks
-│   │   └── src/components/ # Shared UI components
-│   └── desktop/          # Electron wrapper (optional)
-├── packages/
-│   └── shared-types/     # TypeScript interfaces & enums
-├── docker-compose.yml    # PostgreSQL setup
-├── setup.ps1             # Windows setup script
-├── setup.sh              # Linux/Mac setup script
-└── package.json          # Turborepo monorepo config
+├── backend/                    # Spring Boot cloud backend
+│   ├── src/main/java/com/sweetpos/
+│   │   ├── config/            # Security, WebSocket, CORS config
+│   │   ├── controller/        # REST API endpoints
+│   │   ├── dto/               # Request/Response DTOs
+│   │   ├── entity/            # JPA entities
+│   │   ├── repository/        # Spring Data repositories
+│   │   ├── security/          # JWT filter & service
+│   │   ├── service/           # Business logic
+│   │   └── sync/              # Cloud sync engine
+│   ├── src/main/resources/
+│   │   └── application.yml    # Configuration
+│   ├── Dockerfile
+│   └── pom.xml
+├── flutter_app/                # Flutter POS client
+│   ├── lib/
+│   │   ├── database/          # Drift SQLite (offline storage)
+│   │   ├── models/            # Data models
+│   │   ├── providers/         # Riverpod state management
+│   │   ├── screens/           # UI screens
+│   │   ├── services/          # API & connectivity
+│   │   ├── sync/              # Offline sync engine
+│   │   ├── utils/             # Theme, constants
+│   │   ├── widgets/           # Shared UI components
+│   │   └── main.dart          # App entry point
+│   └── pubspec.yaml
+├── docker-compose.yml          # PostgreSQL + Backend
+└── README.md
 ```
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/login` | POST | Login |
+| `/api/auth/refresh` | POST | Refresh token |
+| `/api/auth/users` | GET/POST | User management |
+| `/api/products` | GET/POST/PUT/DELETE | Products CRUD |
+| `/api/products/barcode/{code}` | GET | Lookup by barcode |
+| `/api/categories` | GET/POST/PUT/DELETE | Categories |
+| `/api/customers` | GET/POST/PUT/DELETE | Customers |
+| `/api/sales` | GET/POST | Sales |
+| `/api/sales/{id}/cancel` | POST | Cancel sale |
+| `/api/inventory/stock-in` | POST | Stock in |
+| `/api/inventory/stock-out` | POST | Stock out |
+| `/api/dashboard` | GET | Dashboard summary |
+| `/api/reports/sales` | GET | Sales report |
+| `/api/sync` | POST | Batch sync from device |
+| `/api/health` | GET | Health check |
+| `/ws` | WebSocket | Real-time updates |
+
+## Offline-First Sync Flow
+
+1. **Sale created offline** → Saved to local SQLite + added to sync queue
+2. **Device comes online** → Sync engine sends pending items to cloud
+3. **Cloud processes** → Returns success/failure per item + any cloud changes
+4. **Cloud changes** → Product/price/category updates pushed to local DB
+5. **Real-time** → WebSocket notifies admin portal of new sales instantly
+
+## Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_HOST` | localhost | PostgreSQL host |
+| `DB_PORT` | 5432 | PostgreSQL port |
+| `DB_NAME` | sweetpos | Database name |
+| `DB_USERNAME` | sweetpos | Database user |
+| `DB_PASSWORD` | sweetpos_dev_password | Database password |
+| `JWT_SECRET` | (built-in dev secret) | JWT signing key |
+| `CORS_ORIGINS` | http://localhost:5173 | Allowed CORS origins |
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React 18, Vite, Zustand, TanStack Query, Recharts |
-| Backend | NestJS 10, TypeORM, PostgreSQL 16, JWT |
-| Monorepo | Turborepo, pnpm workspaces |
-| Database | PostgreSQL 16 (Docker) |
-| Barcode | html5-qrcode (webcam scanning) |
-
-## API Documentation
-
-Swagger docs available at: http://localhost:3000/api/docs
-
-## Environment Variables
-
-See `.env.example` for all configuration options. Key settings:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `API_PORT` | 3000 | API server port |
-| `DB_HOST` | localhost | PostgreSQL host |
-| `DB_PASSWORD` | sweetpos_dev_password | Database password |
-| `JWT_ACCESS_EXPIRY` | 8h | Token expiration |
-| `NODE_ENV` | development | Enables auto-sync DB schema |
+| POS App | Flutter 3.24, Dart, Riverpod, Drift (SQLite) |
+| Backend | Spring Boot 3.4, Java 21, Spring Security, JPA |
+| Database | PostgreSQL 16 (cloud), SQLite (local) |
+| Sync | REST + WebSocket (STOMP) |
+| Build | Maven (backend), Flutter CLI (app) |
+| Container | Docker, Docker Compose |
 
 ## License
 

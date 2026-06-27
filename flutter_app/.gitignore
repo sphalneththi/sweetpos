@@ -1,0 +1,27 @@
+# Flutter
+.dart_tool/
+.packages
+build/
+*.g.dart
+*.freezed.dart
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# macOS
+.DS_Store
+
+# Android
+android/.gradle/
+android/local.properties
+android/app/build/
+
+# iOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/flutter_export_environment.sh
+
+# Windows
+windows/flutter/ephemeral/
